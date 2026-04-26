@@ -298,8 +298,7 @@
             { label: '圈名', values: ['Clay', '星壤', 'Claylark', '星壤云雀'] },
             { label: '坐标', values: ['江苏南京'] },
             { label: '职业', values: ['高中生'] },
-            { label: 'MBTI', values: ['ENFP'] },
-            { label: '核心爱好', values: ['撸代码', '二次元插画', '平面设计', '轨道交通', '银行卡收集'] }
+            { label: 'MBTI', values: ['ENFP'] }
         ];
 
         return (
@@ -591,14 +590,9 @@
                             {PROJECTS.map((proj, i) => (
                                 <div key={i} className="shrink-0 w-[90vw] md:w-[800px] aspect-video rounded-[2rem] overflow-hidden relative group snap-center shadow-md border border-gray-200 bg-gray-900">
                                     <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-gray-900 z-0"></div>
-                                    <img src={proj.img} alt={proj.name} className="w-full h-full object-cover opacity-60 transition-all duration-700 group-hover:scale-105 group-hover:opacity-80 relative z-10" />
-                                    <div className="absolute top-0 left-0 p-6 md:p-10 pointer-events-none z-20">
-                                        <span className="text-2xl md:text-4xl font-bold text-white drop-shadow-lg tracking-wide font-sans">{proj.name}</span>
-                                    </div>
-                                    <div className="absolute bottom-0 right-0 p-6 md:p-10 flex flex-col items-end pointer-events-none z-20">
-                                        <span className="text-[10px] md:text-xs font-bold text-white/70 uppercase tracking-widest mb-1">Duration</span>
-                                        <span className="text-base md:text-lg font-bold text-white drop-shadow-md font-mono">{proj.start} — {proj.end}</span>
-                                    </div>
+                                    <img src={proj.img} alt={proj.name} className="w-full h-full object-cover opacity-60 transition-all duration-700 group-hover:scale-105" />
+                                    <div className="absolute top-0 left-0 p-6 md:p-10 font-bold text-2xl md:text-4xl text-white drop-shadow-lg">{proj.name}</div>
+                                    <div className="absolute bottom-0 right-0 p-6 md:p-10 flex flex-col items-end font-bold text-white font-mono">{proj.start} — {proj.end}</div>
                                 </div>
                             ))}
                         </div>
@@ -609,9 +603,9 @@
                     </div>
                 </div>
 
-                {/* 关注领域 & 雷点 */}
                 <div className="w-full max-w-5xl mx-auto px-6 md:px-12 flex flex-col gap-3 md:gap-4">
                     {[
+                        { label: '核心爱好', values: ['写代码', '二次元插画', '平面设计', '轨道交通', '银行卡收集'], red: false },
                         { label: '关注领域', values: ['角色考据 & 剧情分析', '城市轨道交通规划', '平面设计', '二次元插画'], red: false },
                         { label: '雷点', values: ['角色黑', '人身攻击', '严重OOC', '不尊重小众爱好', 'KY精'], red: true }
                     ].map((attr, idx) => (
