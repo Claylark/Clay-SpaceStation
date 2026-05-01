@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clay SpaceStation | 星壤空間站</title>
+  
+  <!-- 字體與基本圖示 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  
+  <!-- 核心依賴 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Google Sans Flex"', '"Noto Sans TC"', 'system-ui', 'sans-serif'],
+            serif: ['"Noto Serif TC"', 'serif'],
+            mono: ['"Google Sans Code"', 'monospace'], // 引入 Google Sans Code 作為等寬字體
+          },
+          colors: {
+            blue: {
+              50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa',
+              500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.6s ease-out forwards',
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    html {
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+    }
+    
+    body { background-color: #f9fafb; color: #111827; overflow-x: hidden; transition: background-color 0.3s ease, color 0.3s ease; }
+    /* 極致純黑的深色模式，提供最高對比度，強制白字 */
+    html.dark body { background-color: #000000; color: #ffffff; }
+    
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    html.dark ::-webkit-scrollbar-thumb { background: #333333; }
+    html.dark ::-webkit-scrollbar-thumb:hover { background: #555555; }
+    
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* 全螢幕滾動 Snap 容器樣式 */
+    .snap-section {
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+    }
+    
+    /* 卡片懸浮 */
+    .lf-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 1.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03); transition: all 0.3s ease; }
+    .lf-card:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025); border-color: #d1d5db; }
+    
+    /* 深色模式下的卡片，黑灰質感 */
+    html.dark .lf-card { background: #0a0a0a; border-color: #2a2a2a; box-shadow: 0 4px 15px 0 rgba(0,0,0,0.8); }
+    html.dark .lf-card:hover { border-color: #444444; box-shadow: 0 10px 25px -3px rgba(0,0,0,0.9); }
+
+    /* 藥丸專屬上浮動畫 */
+    @keyframes slideUpPill {
+        0% { opacity: 0; transform: translateY(25px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-pill {
+        opacity: 0;
+        animation: slideUpPill 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* 液態玻璃特定樣式 */
+    .liquid-glass {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    html.dark .liquid-glass {
+        background: rgba(15, 15, 15, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // --- 圖示庫 ---
+    const SVGIcons = {
+        QQ: () => <svg viewBox="0 0 1024 1024" fill="currentColor" className="w-full h-full"><path d="M824.8 613.2c-16-51.4-34.4-94.6-62.7-165.3C766.5 262.2 689.3 112 511.4 112 331.7 112 256.2 265.2 261 447.9c-28.4 70.8-46.7 113.7-62.7 165.3-34 109.5-23 154.8-14.6 155.8 18 2.2 70.1-82.4 70.1-82.4 0 49 25.2 112.9 79.8 159-26.4 8.1-85.7 29.9-71.6 53.8 11.4 19.3 196.2 12.3 249.5 6.3 53.3 6 238.1 13 249.5-6.3 14.1-23.8-45.3-45.7-71.6-53.8 54.6-46.2 79.8-110.1 79.8-159 0 0 52.1 84.6 70.1 82.4 8.5-1.1 19.5-46.4-14.5-155.8z"/></svg>,
+        WeChat: () => <svg viewBox="0 0 1024 1024" fill="currentColor" className="w-full h-full"><path d="M683.4 353.9c13.2 0 26 1.1 38.6 3.1-28.2-124.5-150.3-217.1-296.8-217.1-167.6 0-303.4 113.7-303.4 253.9 0 77.8 40.7 147.2 104.5 194.2-8.5 26.6-26.8 81.3-26.8 81.3s64.7-30.8 126-62.4c30.2 8.8 62.4 13.5 96.1 13.5 9 0 17.8-0.4 26.5-1.1-17.1-34.8-26.8-74.1-26.8-115.3 0-137.9 117.1-250.1 262.1-250.1zM341.2 284.1c19.5 0 35.3 15.8 35.3 35.3s-15.8 35.3-35.3 35.3-35.3-15.8-35.3-35.3 15.8-35.3 35.3-35.3z m162.7 70.6c-19.5 0-35.3-15.8-35.3-35.3s15.8-35.3 35.3-35.3 35.3 15.8 35.3 35.3-15.8 35.3-35.3 35.3z m228.8-3.4c-126.9 0-229.8 88.6-229.8 197.9 0 109.3 102.9 197.9 229.8 197.9 29.5 0 57.6-4 84-11.6 53.6 27.6 110.1 54.5 110.1 54.5s-16.1-47.8-23.5-71c55.7-41.1 91.1-101.8 91.1-169.8 0-109.3-102.8-197.9-261.7-197.9z m-61.7 101.4c14.6 0 26.5 11.9 26.5 26.5s-11.9 26.5-26.5 26.5-26.5-11.9-26.5-26.5 11.9-26.5 26.5-26.5z m123.6 53c-14.6 0-26.5-11.9-26.5-26.5s11.9-26.5 26.5-26.5 26.5 11.9 26.5 26.5-11.9 26.5-26.5 26.5z"/></svg>,
+        Bilibili: () => <svg viewBox="0 0 1024 1024" fill="currentColor" className="w-full h-full"><path d="M685.214 246.541a45.688 45.688 0 0 1 65.556 63.66L677.34 380.203h69.248c82.261 0 148.956 66.695 148.956 148.956v251.391c0 82.262-66.695 148.957-148.956 148.957H277.412c-82.261 0-148.956-66.695-148.956-148.957V529.16c0-82.261 66.695-148.956 148.956-148.956h69.248L273.23 310.202a45.688 45.688 0 0 1 63.66-65.557L441.722 355.08A45.545 45.545 0 0 1 454.195 380.2h115.61a45.545 45.545 0 0 1 12.472-25.121l102.937-108.538zM746.588 471.58H277.412c-31.815 0-57.58 25.765-57.58 57.58v251.391c0 31.815 25.765 57.58 57.58 57.58h469.176c31.815 0 57.58-25.765 57.58-57.58V529.16c0-31.815-25.765-57.58-57.58-57.58zm-354.341 68.533a45.688 45.688 0 0 1 45.688 45.688v45.689a45.688 45.688 0 1 1-91.376 0v-45.689a45.688 45.688 0 0 1 45.688-45.688zm239.865 0a45.688 45.688 0 0 1 45.688 45.688v45.689a45.688 45.688 0 1 1-91.377 0v-45.689a45.688 45.688 0 0 1 45.689-45.688z"/></svg>,
+        GitHub: () => <svg viewBox="0 0 1024 1024" fill="currentColor" className="w-full h-full"><path d="M511.6 76.3C264.3 76.2 64 276.4 64 523.5 64 718.9 189.3 885 363.8 946c23.5 5.9 19.9-10.8 19.9-22.2v-77.5c-135.7 15.9-141.2-73.9-150.3-88.9C215 726 171.5 718 184.5 703c30.9-15.9 62.4 4 98.9 57.9 26.4 39.1 77.9 32.5 104 26 5.7-23.5 17.9-44.5 34.7-60.8-140.6-25.2-199.2-111-199.2-213 0-49.5 16.3-95 48.3-131.7-20.4-60.5 1.9-112.3 4.9-120 58.1-5.2 118.5 41.6 123.2 45.3 33-8.9 70.7-13.6 112.9-13.6 42.4 0 80.2 4.9 113.5 13.9 11.3-8.6 67.3-48.8 121.3-43.9 2.9 7.7 24.7 58.3 5.5 118 32.4 36.8 48.9 82.7 48.9 132.3 0 102.2-59 188.1-200 212.9 23.5 23.2 38.1 55.4 38.1 91v112.5c0.8 9 0 27.9 25 22.7 176.6-59.5 303.4-226.7 303.4-423.8-0.1-247.2-200.3-447.3-447.5-447.3z"/></svg>,
+        Xiaohongshu: () => <svg viewBox="0 0 1024 1024" fill="currentColor" className="w-full h-full"><path d="M512 0C229.23 0 0 229.23 0 512s229.23 512 512 512 512-229.23 512-512S794.77 0 512 0zm217.47 706.77c-17.15 65.5-54.83 110.15-112.18 132.74-60.1 23.68-124 17.1-189.6-19.46-3.8-2.1-5.44-5.96-5.83-10.22l-2.03-24.87c-.36-4.38 2.05-8.48 6.07-10.5 48.96-24.58 87.05-59.38 113.1-103.48-18.06 4.75-35.34 9.4-53.1 14.15-3.32.88-6.9.15-9.67-1.97-2.76-2.12-4.48-5.32-4.63-8.62l-1.37-29.62c-.17-3.6 1.6-7.07 4.75-9.28 62.46-43.9 123.1-89.97 183.05-136.87a9.358 9.358 0 0111.45 14.88c-18.8 14.54-37.58 29.1-56.37 43.68 20.36-4.94 40.7-9.87 61.08-14.8 2.93-.7 6.03-.02 8.5 1.86 2.45 1.87 4.04 4.73 4.34 7.82l1.97 20.88c.32 3.42-1.28 6.75-4.22 8.78-22.37 15.42-44.75 30.82-67.1 46.26 31.8 19.16 57.08 44.57 74.97 75.3a9.42 9.42 0 01-3.23 13.34z"/></svg>,
+        Lofter: () => <svg viewBox="0 0 1024 1024" fill="currentColor" className="w-full h-full"><path d="M512 0c282.77 0 512 229.23 512 512S794.77 1024 512 1024 0 794.77 0 512 229.23 0 512 0zm103.42 278.43H340.54v467.14h274.88v-87.35H436.43V365.78h178.99v-87.35z"/></svg>,
+        StarSparkle: () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M12 22C12 22 13 18 15 15C18 13 22 12 22 12C22 12 18 11 15 8C13 5 12 1 12 1C12 1 11 5 8 8C5 11 1 12 1 12C1 12 5 13 8 15C11 18 12 22 12 22Z"/></svg>,
+    };
+
+    // --- 資料 ---
+    const MAIN_CHARACTERS = [
+        { name: '流螢', img: 'https://images.castorice.co/clay.castorice.co/images/Firefly.jpg' },
+        { name: '昔漣', video: 'https://images.castorice.co/clay.castorice.co/videos/Cyrene.webm' },
+        { name: '知更鳥', img: 'https://images.castorice.co/clay.castorice.co/images/Robin.jpg' },
+        { name: '遐蝶', img: 'https://images.castorice.co/clay.castorice.co/images/Castorice.jpg' },
+        { name: '阮·梅', img: 'https://images.castorice.co/clay.castorice.co/images/RuanMei.jpg' },
+        { name: '愛莉希雅', img: 'https://images.castorice.co/clay.castorice.co/images/Elysia.jpg' },
+        { name: '大黑塔', img: 'https://images.castorice.co/clay.castorice.co/images/TheHerta.jpg' },
+        { name: '優菈', img: 'https://images.castorice.co/clay.castorice.co/images/Eula_Lawrence.jpg' },
+    ];
+
+    const SUB_CHARACTERS = [
+        { name: '伊馮', img: 'https://images.castorice.co/clay.castorice.co/images/Yvonne.jpg' },
+        { name: '別禮', img: 'https://images.castorice.co/clay.castorice.co/images/Last_Ride.png' },
+        { name: '佩麗卡', img: 'https://images.castorice.co/clay.castorice.co/images/Perlica.png' },
+        { name: '神里綾華', img: 'https://images.castorice.co/clay.castorice.co/images/Kamisato_Ayaka.jpg' },
+        { name: '刻律德菈', img: 'https://images.castorice.co/clay.castorice.co/images/Cerydra.jpg' },
+        { name: '海瑟音', img: 'https://images.castorice.co/clay.castorice.co/images/Hysilens.jpg' },
+        { name: '申鶴', img: 'https://images.castorice.co/clay.castorice.co/images/Shenhe.jpg' },
+        { name: '珊瑚宮心海', img: 'https://images.castorice.co/clay.castorice.co/images/Sangonomiya_Kokomi.png' },
+        { name: '茜特菈莉', img: 'https://images.castorice.co/clay.castorice.co/images/Citlali.png' },
+        { name: '胡桃', img: 'https://images.castorice.co/clay.castorice.co/images/Hu_Tao.jpg' },
+        { name: '維爾汀', img: 'https://images.castorice.co/clay.castorice.co/images/Vertin.jpg' },
+        { name: '十四行詩', img: 'https://images.castorice.co/clay.castorice.co/images/Sonetto.jpg' },
+    ];
+
+    const GAMES = [
+        { name: '崩壞：星穹鐵道', img: 'https://images.castorice.co/clay.castorice.co/images/Honkai_Star_Rail.jpg', start: '2023.04', end: '至今' },
+        { name: '原神', img: 'https://images.castorice.co/clay.castorice.co/images/Genshin_Impact.jpg', start: '2021.01', end: '2023.09' },
+        { name: '城市：天際線', img: 'https://images.castorice.co/clay.castorice.co/images/Cities_Skylines.jpg', start: '2019.05', end: '至今' },
+        { name: '我的世界', img: 'https://images.castorice.co/clay.castorice.co/images/Minecraft.jpg', start: '2017.08', end: '至今' },
+        { name: '重返未來：1999', img: 'https://images.castorice.co/clay.castorice.co/images/Reverse_1999.jpg', start: '2023.05', end: '2023.05' }
+    ];
+
+    const PROJECTS = [
+        { name: 'Claylark LinkFlash', img: 'https://images.castorice.co/clay.castorice.co/images/128395786_p0.png', start: '2026.02', end: '至今' },
+        { name: '匹諾康尼摺紙大學', img: 'https://images.castorice.co/clay.castorice.co/images/129858072_p0.jpg', start: '2026.01', end: '至今' }
+    ];
+
+    const EMAILS = [
+        'me@claylark.com',
+        '0@elynfc.com',
+        'firefly@fyrefly.cn',
+        'clay@castorice.co',
+        'clay@cerydra.com',
+        'clay@ppu.edu.kg',
+        'clay@rol.org.cn'
+    ];
+
+    const SOCIAL_LINKS = [
+        { name: 'QQ', id: '1273540767', svgIcon: SVGIcons.QQ, url: 'https://qm.qq.com/cgi-bin/qm/qr?k=6TBe5kg-PeyyAHR7FuX8z6K7_aNd5s1L', color: 'text-blue-500 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-[#0f1b29]' },
+        { name: 'WeChat', id: 'Claylark', svgIcon: SVGIcons.WeChat, url: '#', copy: true, color: 'text-green-500 dark:text-green-400', bg: 'bg-green-50 dark:bg-[#0f2416]' },
+        { name: 'bilibili', id: 'Clay-Liu', svgIcon: SVGIcons.Bilibili, url: 'https://space.bilibili.com/521560305', color: 'text-rose-500 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-[#2e1017]' },
+        { name: 'GitHub', id: '@Claylark', svgIcon: SVGIcons.GitHub, url: 'https://github.com/Claylark', color: 'text-gray-800 dark:text-white', bg: 'bg-gray-100 dark:bg-[#1a1a1a]' },
+        { name: '小紅書', id: 'ClayLiu', svgIcon: SVGIcons.Xiaohongshu, url: 'https://www.xiaohongshu.com/user/profile/661a4b260000000007004838', color: 'text-red-500 dark:text-red-400', bg: 'bg-red-50 dark:bg-[#2e1010]' },
+        { name: 'LOFTER', id: 'Claylark', svgIcon: SVGIcons.Lofter, url: 'https://claylark.lofter.com', color: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-[#0f2424]' },
+    ];
+
+    const SECTIONS = [
+        { id: 'hero', label: '自我介紹' },
+        { id: 'profile', label: '資料簡介' },
+        { id: 'attributes', label: '詳細屬性' },
+        { id: 'network', label: '聯絡方式' },
+        { id: 'history', label: '更新歷史' }
+    ];
+    // 阻斷重渲染死循環提取外側陣列
+    const SECTION_IDS = SECTIONS.map(s => s.id);
+
+    // --- 核心全域元件 ---
+    const Icon = ({ name, className = "" }) => (
+        <span className={`material-symbols-rounded block ${className}`} style={{ fontVariationSettings: "'FILL' 1, 'wght' 400" }}>{name}</span>
+    );
+
+    const LfButton = ({ children, href, onClick, primary = false, className = "" }) => {
+        const baseClass = "px-8 py-3 md:py-3.5 text-base md:text-lg font-bold rounded-full active:scale-95 transition-all inline-flex items-center justify-center gap-2";
+        const primaryClass = "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30 dark:shadow-blue-600/40";
+        const secondaryClass = "bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-[#1a1a1a] dark:hover:bg-[#2a2a2a] dark:text-white dark:border dark:border-[#333]";
+        const Component = href ? 'a' : 'button';
+        return (
+            <Component href={href} onClick={onClick} className={`${baseClass} ${primary ? primaryClass : secondaryClass} ${className}`}>
+                {children}
+            </Component>
+        );
+    };
+
+    // --- 動畫分段容器元件 ---
+    const AnimatedSection = ({ mainTitle, subTitle, repeatTitle = false, children }) => {
+        const domRef = useRef(null);
+        const [isVisible, setVisible] = useState(false);
+        const [isScrolling, setIsScrolling] = useState(false);
+
+        useEffect(() => {
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => setVisible(entry.isIntersecting));
+            }, { threshold: 0.1 });
+            if (domRef.current) observer.observe(domRef.current);
+            return () => {
+                if (domRef.current) observer.unobserve(domRef.current);
+            }
+        }, []);
+
+        useEffect(() => {
+            if (!repeatTitle) return;
+            let timer;
+            const handleScroll = () => {
+                setIsScrolling(true);
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    setIsScrolling(false);
+                }, 150); 
+            };
+            window.addEventListener('scroll', handleScroll, { passive: true });
+            return () => window.removeEventListener('scroll', handleScroll);
+        }, [repeatTitle]);
+
+        return (
+            <div ref={domRef} className="snap-section min-h-[100svh] w-full flex flex-col pt-[88px] pb-12 px-6 md:px-12 relative overflow-hidden">
+                <div className="w-full max-w-5xl mx-auto flex flex-col items-center flex-1 justify-center">
+                    {mainTitle && (
+                        <div className={`w-full text-left mb-8 md:mb-12 transition-all duration-500 ease-out transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+                            <h2 className={`text-4xl md:text-5xl font-bold text-gray-900 dark:text-white tracking-tight ${repeatTitle ? 'transition-opacity' : ''} ${repeatTitle && isScrolling ? 'opacity-0 duration-75' : 'opacity-100 duration-500 delay-75'}`}>
+                                {mainTitle}
+                            </h2>
+                            {subTitle && <h3 className="font-bold text-xl md:text-2xl text-blue-600 dark:text-blue-500 mt-4 md:mt-5">{subTitle}</h3>}
+                        </div>
+                    )}
+                    <div className={`w-full flex flex-col items-center justify-center transition-all duration-500 ease-out transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+                        {children}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // --- 自訂 Hooks ---
+    const useScrollSpy = (ids, offset = window.innerHeight / 2) => {
+        const [activeId, setActiveId] = useState(ids[0]);
+        useEffect(() => {
+            const handleScroll = () => {
+                const scrollPosition = window.scrollY + offset;
+                let current = ids[0];
+                for (const id of ids) {
+                    const element = document.getElementById(id);
+                    if (element && element.offsetTop <= scrollPosition) {
+                        current = id;
+                    }
+                }
+                setActiveId(current);
+            };
+            window.addEventListener('scroll', handleScroll, { passive: true });
+            handleScroll(); 
+            return () => window.removeEventListener('scroll', handleScroll);
+        }, [ids, offset]);
+        return activeId;
+    };
+
+    // --- 頁面模組 ---
+    const Header = () => {
+        const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+        const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+        const [isDark, setIsDark] = useState(false);
+        const activeId = useScrollSpy(SECTION_IDS);
+        const langMenuRef = useRef(null);
+
+        useEffect(() => {
+            const theme = localStorage.getItem('theme');
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (theme === 'dark' || (!theme && systemDark)) {
+                document.documentElement.classList.add('dark');
+                setIsDark(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                setIsDark(false);
+            }
+
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            const handler = (e) => {
+                if (!localStorage.getItem('theme')) {
+                    if (e.matches) {
+                        document.documentElement.classList.add('dark');
+                        setIsDark(true);
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                        setIsDark(false);
+                    }
+                }
+            };
+            if (mediaQuery.addEventListener) {
+                mediaQuery.addEventListener('change', handler);
+                return () => mediaQuery.removeEventListener('change', handler);
+            }
+        }, []);
+
+        useEffect(() => {
+            const handleClickOutside = (event) => {
+                if (langMenuRef.current && !langMenuRef.current.contains(event.target)) {
+                    setIsLangMenuOpen(false);
+                }
+            };
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }, []);
+
+        const toggleDarkMode = () => {
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                setIsDark(false);
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                setIsDark(true);
+            }
+        };
+
+        const handleNavClick = (e, id) => {
+            e.preventDefault();
+            document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+            setIsMobileMenuOpen(false);
+            setIsLangMenuOpen(false);
+        };
+
+        const LANG_OPTIONS = [
+            { main: '簡體中文', sub: '(中國大陸)', url: '/zh-CN', id: 'zh-CN' },
+            { main: '繁體中文', sub: '(中國香港)', url: '/zh-HK', id: 'zh-HK' },
+            { main: '繁體中文', sub: '(中國台灣)', url: '/zh-TW', id: 'zh-TW' },
+            { main: 'English', sub: '(US)', url: '/en-US', id: 'en-US' }
+        ];
+
+        return (
+            <header className="fixed top-0 left-0 w-full px-6 py-4 border-b border-gray-100 dark:border-[#222222] flex justify-between items-center bg-white/95 dark:bg-[#141414]/90 backdrop-blur-xl z-50 transition-colors duration-300">
+                <div className="flex-shrink-0">
+                    <a href="#hero" onClick={(e) => handleNavClick(e, 'hero')} className="text-[18px] text-gray-800 dark:text-white tracking-tight flex items-center cursor-pointer" style={{ fontFamily: '"Google Sans Flex", "Google Sans", sans-serif' }}>
+                        <span className="font-normal">Clay</span><span className="font-semibold ml-1">SpaceStation</span>
+                    </a>
+                </div>
+                <div className="flex gap-3 items-center relative">
+                    <nav className="hidden md:flex items-center bg-gray-50/50 dark:bg-[#1a1a1a] p-1 rounded-full border border-gray-100 dark:border-[#333]">
+                        {SECTIONS.map(s => (
+                            <a 
+                                key={s.id} 
+                                id={`nav-item-${s.id}`}
+                                href={`#${s.id}`} 
+                                onClick={(e) => handleNavClick(e, s.id)}
+                                className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${activeId === s.id ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-white hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'}`}
+                            >
+                                {s.label}
+                            </a>
+                        ))}
+                    </nav>
+                    <button 
+                        onClick={() => { setIsMobileMenuOpen(!isMobileMenuOpen); setIsLangMenuOpen(false); }}
+                        className="md:hidden w-8 h-8 rounded-full bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-white flex items-center justify-center active:scale-90 transition-all shadow-sm border border-transparent dark:border-[#333]"
+                    >
+                        <Icon name={isMobileMenuOpen ? "close" : "menu"} className="text-[18px]" />
+                    </button>
+                    <button 
+                        onClick={toggleDarkMode} 
+                        className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center active:bg-blue-800 transition-all shadow-md hover:bg-blue-700 shrink-0"
+                    >
+                        <Icon name={isDark ? "light_mode" : "dark_mode"} className="text-[18px]" />
+                    </button>
+                    <div className="relative" ref={langMenuRef}>
+                        <button 
+                            onClick={() => { setIsLangMenuOpen(!isLangMenuOpen); setIsMobileMenuOpen(false); }}
+                            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-white flex items-center justify-center active:scale-90 transition-all shadow-sm border border-transparent dark:border-[#333] hover:bg-gray-200 dark:hover:bg-[#2a2a2a] shrink-0"
+                            title="語言切換 / Language"
+                        >
+                            <Icon name="language" className="text-[18px]" />
+                        </button>
+                        <div className={`absolute top-[calc(100%+20px)] right-0 bg-white dark:bg-[#111111] p-2.5 rounded-3xl shadow-xl border border-gray-100 dark:border-[#333] flex flex-col gap-1.5 transition-all duration-300 origin-top-right min-w-[130px] z-[60] ${isLangMenuOpen ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-90 opacity-0 pointer-events-none'}`}>
+                            {LANG_OPTIONS.map(lang => (
+                                <a 
+                                    key={lang.id} 
+                                    href={lang.url}
+                                    className={`px-4 py-2.5 rounded-[1.25rem] text-sm text-center font-bold transition-all flex flex-col items-center justify-center leading-tight ${lang.id === 'zh-TW' ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-white hover:bg-gray-50 dark:hover:bg-[#1a1a1a] hover:text-gray-900'}`}
+                                >
+                                    <span>{lang.main}</span>
+                                    <span className="text-[10px] opacity-70 font-medium mt-0.5">{lang.sub}</span>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                    <div className={`md:hidden absolute top-[calc(100%+20px)] right-0 bg-white dark:bg-[#111111] p-2.5 rounded-3xl shadow-xl border border-gray-100 dark:border-[#333] flex flex-col gap-1.5 transition-all duration-300 origin-top-right min-w-[140px] z-[60] ${isMobileMenuOpen ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-90 opacity-0 pointer-events-none'}`}>
+                        {SECTIONS.map(s => (
+                            <a 
+                                key={s.id} 
+                                href={`#${s.id}`} 
+                                onClick={(e) => handleNavClick(e, s.id)}
+                                className={`px-4 py-3 rounded-full text-sm text-center font-bold transition-all ${activeId === s.id ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-white hover:bg-gray-50 dark:hover:bg-[#1a1a1a] hover:text-gray-900'}`}
+                            >
+                                {s.label}
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            </header>
+        );
+    };
+
+    const Hero = () => {
+        return (
+            <section id="hero">
+                <AnimatedSection>
+                    <div className="w-full flex flex-col items-start relative mt-8 md:mt-16">
+                        <div className="text-left font-bold text-gray-900 dark:text-white text-[2.5rem] sm:text-5xl md:text-6xl lg:text-[4.5rem] leading-[1.3] md:leading-[1.4] tracking-tight">
+                            <div>你好你好，</div>
+                            <div className="flex items-center flex-wrap gap-2 md:gap-4 my-2 relative z-20">
+                                <span className="shrink-0">我是</span>
+                                <div className="animate-pill inline-flex bg-blue-600 text-white border border-blue-500 dark:border-blue-500 shadow-lg shadow-blue-600/20 dark:shadow-blue-600/30 rounded-full p-1 md:p-2 pr-6 md:pr-10 items-center gap-3 md:gap-4 z-50 leading-none">
+                                    <img src="https://images.castorice.co/clay.castorice.co/images/Head.jpg" alt="Avatar" className="w-[1.15em] h-[1.15em] rounded-full object-cover border-[3px] border-white shrink-0" />
+                                    <span className="font-bold tracking-tight whitespace-nowrap">Claylark</span>
+                                </div>
+                            </div>
+                            <div>很高興認識你呀！</div>
+                        </div>
+                        <div className="mt-14 flex flex-wrap items-center gap-5">
+                            <LfButton href="#profile" onClick={(e) => { e.preventDefault(); document.getElementById('profile')?.scrollIntoView({ behavior: 'smooth' }); }}>了解詳細屬性</LfButton>
+                            <LfButton href="#network" primary onClick={(e) => { e.preventDefault(); document.getElementById('network')?.scrollIntoView({ behavior: 'smooth' }); }}>加個好友</LfButton>
+                        </div>
+                    </div>
+                </AnimatedSection>
+            </section>
+        );
+    };
+
+    const Profile = () => {
+        const [todayDate, setTodayDate] = useState("");
+        useEffect(() => {
+            const date = new Date();
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+            const year = date.getFullYear();
+            setTodayDate(`${day}, ${month}, ${year}`);
+        }, []);
+
+        const attributesOverview = [
+            { label: '圈名', values: ['Clay', '星壤', 'Claylark', '星壤雲雀'] },
+            { label: '座標', values: ['江蘇南京'] },
+            { label: '職業', values: ['高中生'] },
+            { label: 'MBTI', values: ['ENFP'] }
+        ];
+
+        return (
+            <section id="profile" className="w-full relative scroll-mt-0">
+                {/* 第一螢幕：護照 */}
+                <AnimatedSection mainTitle="資料簡介" subTitle="空間站通行證">
+                    {/* --- 行動端護照 --- */}
+                    <div className="md:hidden relative overflow-hidden bg-[#f4f7fb] rounded-2xl shadow-md border border-blue-200/60 hover:border-blue-300 hover:shadow-lg transition-all w-full flex flex-col p-6 space-y-6">
+                        <div className="border-b-[1.5px] border-blue-200/80 pb-3">
+                            <h3 className="text-xl font-bold text-blue-700 tracking-tight" style={{ fontFamily: '"Google Sans Flex", sans-serif' }}>星壤空間站 Clay SpaceStation</h3>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="w-28 shrink-0 flex flex-col gap-2">
+                                <div className="text-center font-bold text-xs text-blue-700 leading-tight">護照<br/>Passport</div>
+                                <div className="aspect-[33/48] rounded-md overflow-hidden bg-white"><img src="https://images.castorice.co/clay.castorice.co/images/Head.jpg" className="w-full h-full object-cover filter contrast-[1.05]" /></div>
+                            </div>
+                            <div className="flex flex-col flex-1 gap-4">
+                                <div className="flex gap-4">
+                                    <div><div className="text-xs text-blue-700 font-bold mb-0.5">類型/Type</div><div className="font-bold text-gray-900 text-base">S</div></div>
+                                    <div><div className="text-xs text-blue-700 font-bold mb-0.5">代碼/Code</div><div className="font-bold text-gray-900 text-base">CSS</div></div>
+                                </div>
+                                <div><div className="text-xs text-blue-700 font-bold mb-0.5">護照號碼/Passport No.</div><div className="font-bold text-gray-900 text-base tracking-widest">CS91726710</div></div>
+                                <div className="mt-1"><div className="text-xs text-blue-700 font-bold mb-0.5">姓名/Name</div><div className="font-bold text-gray-900 text-2xl leading-tight">星壤雲雀</div><div className="font-bold text-gray-900 text-xl leading-tight mt-1">Claylark</div></div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-y-5 gap-x-4 relative pt-2">
+                            <div className="absolute right-0 top-0 w-24 opacity-25 mix-blend-multiply grayscale pointer-events-none z-0 rounded-md overflow-hidden">
+                                 <img src="https://images.castorice.co/clay.castorice.co/images/Head.jpg" className="w-full aspect-[33/48] object-cover" />
+                            </div>
+                            <div className="z-10"><div className="text-xs text-blue-700 font-bold mb-0.5">性別/Sex</div><div className="font-bold text-gray-900 text-base">男 / M</div></div>
+                            <div className="z-10"><div className="text-xs text-blue-700 font-bold mb-0.5">國籍/Nationality</div><div className="font-bold text-gray-900 text-base">中國 / Chinese</div></div>
+                            <div className="z-10"><div className="text-xs text-blue-700 font-bold mb-0.5">出生地點/Place of birth</div><div className="font-bold text-gray-900 text-base">地球 / Earth</div></div>
+                            <div className="z-10"><div className="text-xs text-blue-700 font-bold mb-0.5">出生日期/Date of birth</div><div className="font-bold text-gray-900 text-base font-mono">17, SEP, 2008</div></div>
+                            <div className="z-10"><div className="text-xs text-blue-700 font-bold mb-0.5">簽發地點/Place of issue</div><div className="font-bold text-gray-900 text-base">星壤空間站 / Clay Space Station</div></div>
+                            <div className="z-10"><div className="text-xs text-blue-700 font-bold mb-0.5">簽發日期/Date of issue</div><div className="font-bold text-gray-900 text-base font-mono">{todayDate}</div></div>
+                            <div className="col-span-2 z-10"><div className="text-xs text-blue-700 font-bold mb-0.5">簽發機關/Authority</div><div className="font-bold text-gray-900 text-base leading-snug">星壤空間站通行證管理局<br/>Passport Administration, CSS</div></div>
+                            <div className="z-10"><div className="text-xs text-blue-700 font-bold mb-0.5">有效期至/Date of expiry</div><div className="font-bold text-gray-900 text-base font-mono">31, DEC, 9999</div></div>
+                            <div className="flex flex-col justify-end pb-1 col-span-2 z-10 mt-2"><div className="text-xs text-blue-700 font-bold mb-1">持照人簽名/Signature</div><div className="text-3xl text-gray-900 font-light tracking-wide" style={{ fontFamily: '"Google Sans Flex", "Google Sans", sans-serif' }}>Claylark</div></div>
+                        </div>
+                        <div className="pt-4 border-t-[1.5px] border-blue-200/80 text-[11px] sm:text-[13px] text-gray-800 tracking-[0.1em] break-all leading-[1.6] select-all uppercase font-mono">
+                            S&lt;CSSCLAYLARK&lt;&lt;XINGRANGYUNQUE&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;<br/>CS917267102CHN0809176M9912310&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;0
+                        </div>
+                    </div>
+
+                    {/* --- 桌面端 1:1 ICAO 護照向量佈局 --- */}
+                    <div className="hidden md:block w-full" style={{ containerType: 'inline-size' }}>
+                        <div className="relative w-full bg-[#f4f7fb] rounded-[1.5rem] shadow-md border border-blue-200/60 hover:border-blue-300 hover:shadow-lg transition-all overflow-hidden" style={{ aspectRatio: '125 / 88' }}>
+                            <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '1.5cqw 1.5cqw' }}></div>
+                            <div className="absolute border-b-[1.5px] border-blue-200/80" style={{ top: '9cqw', left: '4cqw', right: '4cqw' }}></div>
+                            <div className="absolute text-blue-700 font-bold" style={{ top: '4.2cqw', left: '4cqw', fontSize: '3cqw', fontFamily: '"Google Sans Flex", sans-serif' }}>
+                                星壤空間站 Clay SpaceStation
+                            </div>
+
+                            <div className="absolute text-center" style={{ top: '12cqw', left: '4cqw', width: '24cqw' }}>
+                                <div className="text-blue-700 font-bold leading-tight" style={{ fontSize: '1.4cqw' }}>護照<br/>Passport</div>
+                            </div>
+                            
+                            <div className="absolute" style={{ top: '12cqw', left: '32cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>類型 / Type</div>
+                                <div className="text-gray-900 font-bold" style={{ fontSize: '2.3cqw' }}>S</div>
+                            </div>
+                            
+                            <div className="absolute" style={{ top: '12cqw', left: '52cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>空間站碼 / Code</div>
+                                <div className="text-gray-900 font-bold" style={{ fontSize: '2.3cqw' }}>CSS</div>
+                            </div>
+                            
+                            <div className="absolute" style={{ top: '12cqw', left: '77cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>護照號碼 / Passport No.</div>
+                                <div className="text-gray-900 font-bold tracking-widest" style={{ fontSize: '2.3cqw' }}>CS91726710</div>
+                            </div>
+
+                            <div className="absolute bg-white rounded-md overflow-hidden" style={{ top: '18cqw', left: '4cqw', width: '24cqw', height: '35cqw' }}>
+                                <img src="https://images.castorice.co/clay.castorice.co/images/Head.jpg" className="w-full h-full object-cover filter contrast-[1.05]" />
+                            </div>
+
+                            <div className="absolute" style={{ top: '18cqw', left: '32cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>姓名 / Name</div>
+                                <div className="text-gray-900 font-bold" style={{ fontSize: '3.2cqw', lineHeight: 1.15 }}>星壤雲雀</div>
+                                <div className="text-gray-900 font-bold" style={{ fontSize: '2.5cqw', lineHeight: 1.15, marginTop: '0.2cqw' }}>Claylark</div>
+                            </div>
+
+                            <div className="absolute" style={{ top: '29cqw', left: '32cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>性別 / Sex</div>
+                                <div className="text-gray-900 font-bold" style={{ fontSize: '2.3cqw' }}>男 / M</div>
+                            </div>
+                            <div className="absolute" style={{ top: '29cqw', left: '45cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>國籍 / Nationality</div>
+                                <div className="text-gray-900 font-bold" style={{ fontSize: '2.3cqw' }}>中國 / Chinese</div>
+                            </div>
+
+                            <div className="absolute" style={{ top: '36cqw', left: '32cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>出生地點 / Place of birth</div>
+                                <div className="text-gray-900 font-bold" style={{ fontSize: '2.3cqw' }}>地球 / Earth</div>
+                            </div>
+
+                            <div className="absolute" style={{ top: '43cqw', left: '32cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>簽發地點 / Place of issue</div>
+                                <div className="text-gray-900 font-bold" style={{ fontSize: '2.3cqw' }}>星壤空間站 / Clay Space Station</div>
+                            </div>
+
+                            <div className="absolute" style={{ top: '50cqw', left: '32cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>簽發機關 / Authority</div>
+                                <div className="text-gray-900 font-bold" style={{ fontSize: '1.9cqw', lineHeight: 1.25 }}>
+                                    星壤空間站通行證管理局<br/>Passport Administration, CSS
+                                </div>
+                            </div>
+
+                            <div className="absolute z-10" style={{ top: '29cqw', left: '68cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>出生日期 / Date of birth</div>
+                                <div className="text-gray-900 font-bold font-mono tracking-wide" style={{ fontSize: '2.3cqw' }}>17, SEP, 2008</div>
+                            </div>
+
+                            <div className="absolute z-10" style={{ top: '36cqw', left: '68cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>簽發日期 / Date of issue</div>
+                                <div className="text-gray-900 font-bold font-mono tracking-wide" style={{ fontSize: '2.3cqw' }}>{todayDate || "26, APR, 2026"}</div>
+                            </div>
+
+                            <div className="absolute z-10" style={{ top: '43cqw', left: '68cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>有效期至 / Date of expiry</div>
+                                <div className="text-gray-900 font-bold font-mono tracking-wide" style={{ fontSize: '2.3cqw' }}>31, DEC, 9999</div>
+                            </div>
+
+                            <div className="absolute z-10" style={{ top: '50cqw', left: '68cqw' }}>
+                                <div className="text-blue-700 font-bold" style={{ fontSize: '1.4cqw', marginBottom: '0.3cqw' }}>持照人簽名 / Signature</div>
+                                <div className="text-gray-900 font-light tracking-wider" style={{ fontSize: '4.5cqw', fontFamily: '"Google Sans Flex", "Google Sans", sans-serif' }}>Claylark</div>
+                            </div>
+
+                            <div className="absolute mix-blend-multiply grayscale opacity-25 z-0 rounded-sm overflow-hidden" style={{ top: '18cqw', left: '82cqw', width: '15.1cqw', height: '22cqw' }}>
+                                <img src="https://images.castorice.co/clay.castorice.co/images/Head.jpg" className="w-full h-full object-cover" />
+                            </div>
+
+                            <div className="absolute border-t-[1.5px] border-blue-200/80" style={{ bottom: '15cqw', left: '4cqw', right: '4cqw' }}></div>
+                            <div className="absolute" style={{ bottom: '4cqw', left: '4cqw', right: '4cqw' }}>
+                                <div className="text-gray-800 tracking-[0.2cqw] uppercase font-mono" style={{ fontSize: '2.4cqw', lineHeight: 1.6 }}>
+                                    S&lt;CSSCLAYLARK&lt;&lt;XINGRANGYUNQUE&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;<br/>
+                                    CS917267102CHN0809176M9912310&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;0
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </AnimatedSection>
+
+                {/* 第二螢幕：屬性概覽藥丸 */}
+                <AnimatedSection mainTitle="資料簡介" subTitle="屬性概覽" repeatTitle={true}>
+                    <div className="w-full flex flex-col gap-4">
+                        {attributesOverview.map((attr, idx) => (
+                            <div key={idx} className="flex flex-wrap items-center gap-3">
+                                <div className="px-5 py-2.5 bg-blue-600 text-white rounded-full text-sm font-bold shadow-md shadow-blue-600/20 dark:shadow-blue-600/40">{attr.label}</div>
+                                {attr.values.map((val, i) => (
+                                    <div key={i} className="px-5 py-2.5 bg-blue-50 dark:bg-blue-900/40 text-gray-900 dark:text-white border border-blue-100 dark:border-blue-700/50 rounded-full text-sm font-bold shadow-sm hover:bg-blue-100 dark:hover:bg-blue-800/60 transition-colors cursor-default">
+                                        {val}
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                        
+                        <div className="flex flex-wrap items-center gap-3 mt-1">
+                            <div className="px-5 py-2.5 bg-orange-500 text-white rounded-full text-sm font-bold shadow-md shadow-orange-500/20 dark:shadow-orange-600/40">提示</div>
+                            <div className="px-5 py-2.5 bg-amber-50 dark:bg-orange-900/40 text-amber-700 dark:text-orange-200 border border-amber-200 dark:border-orange-700/50 rounded-full text-sm font-bold">本人不使用秒讚，如需補讚請私訊我</div>
+                        </div>
+                    </div>
+                </AnimatedSection>
+            </section>
+        );
+    };
+
+    const Attributes = () => {
+        const mainRef = useRef(null);
+        const subRef = useRef(null);
+        const gamesRef = useRef(null);
+        const projRef = useRef(null);
+        
+        const [isMd, setIsMd] = useState(window.innerWidth >= 768);
+        useEffect(() => {
+            const handleResize = () => setIsMd(window.innerWidth >= 768);
+            window.addEventListener('resize', handleResize);
+            return () => window.removeEventListener('resize', handleResize);
+        }, []);
+
+        const [pageIdxs, setPageIdxs] = useState({ main: 0, sub: 0, games: 0, proj: 0 });
+
+        const getItemsPerPage = (key) => key === 'sub' ? (isMd ? 4 : 2) : 1; 
+
+        const handleScrollEvent = (e, key) => {
+            const container = e.target;
+            if (!container.children.length) return;
+            const itemWidth = container.children[0].offsetWidth + parseInt(window.getComputedStyle(container).gap || 16);
+            const itemsPerPage = getItemsPerPage(key);
+            const pageWidth = itemWidth * itemsPerPage;
+            const newPageIdx = Math.round(container.scrollLeft / pageWidth);
+            setPageIdxs(prev => prev[key] === newPageIdx ? prev : { ...prev, [key]: newPageIdx });
+        };
+
+        const scrollStep = (ref, direction, key) => {
+            if (!ref.current || !ref.current.children.length) return;
+            const container = ref.current;
+            const itemWidth = container.children[0].offsetWidth + parseInt(window.getComputedStyle(container).gap || 16);
+            const itemsPerPage = getItemsPerPage(key);
+            const scrollAmount = itemWidth * itemsPerPage;
+            container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+        };
+
+        const setupAutoScroll = (ref, key) => {
+            if (!ref.current || !ref.current.children.length) return;
+            const container = ref.current;
+            const { scrollLeft, scrollWidth, clientWidth } = container;
+            const itemWidth = container.children[0].offsetWidth + parseInt(window.getComputedStyle(container).gap || 16);
+            const itemsPerPage = getItemsPerPage(key);
+            const scrollAmount = itemWidth * itemsPerPage;
+            
+            if (scrollLeft + clientWidth >= scrollWidth - 20) {
+                container.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+                container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        };
+
+        useEffect(() => {
+            const timers = [
+                setInterval(() => setupAutoScroll(mainRef, 'main'), 7000),
+                setInterval(() => setupAutoScroll(subRef, 'sub'), 7000),
+                setInterval(() => setupAutoScroll(gamesRef, 'games'), 7000),
+                setInterval(() => setupAutoScroll(projRef, 'proj'), 7000)
+            ];
+            return () => timers.forEach(clearInterval);
+        }, []);
+
+        return (
+            <section id="attributes" className="w-full relative scroll-mt-0">
+
+                {/* 螢幕 1：主推角色 */}
+                <AnimatedSection mainTitle="詳細屬性" subTitle="主推角色">
+                    <div className="relative w-full flex flex-col items-center justify-center">
+                        <div ref={mainRef} onScroll={(e) => handleScrollEvent(e, 'main')} className="w-[85vw] md:w-[600px] flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory rounded-[2rem]">
+                            {MAIN_CHARACTERS.map((char, i) => (
+                                <div key={i} className="shrink-0 w-full aspect-video overflow-hidden relative group snap-start shadow-sm border border-gray-200 dark:border-[#333] bg-gray-100 dark:bg-[#0a0a0a] rounded-[2rem]">
+                                    {char.video ? (
+                                        <video src={char.video} autoPlay loop muted playsInline className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                    ) : (
+                                        <img src={char.img} alt={char.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                                    )}
+                                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end justify-end pb-6 pr-8 md:pb-8 md:pr-10 pointer-events-none">
+                                        <span className="text-2xl md:text-3xl font-bold text-[#FFD700] drop-shadow-lg tracking-wide font-serif">{char.name}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="w-[85vw] md:w-[600px] flex justify-between items-center mt-4">
+                            <div className="bg-blue-50 dark:bg-blue-900/40 border border-blue-100 dark:border-blue-700/50 text-blue-600 dark:text-blue-300 text-[11px] font-mono px-4 py-1.5 rounded-full font-bold shadow-sm flex items-center justify-center tracking-widest">
+                                {String(pageIdxs.main + 1).padStart(2, '0')} / {String(MAIN_CHARACTERS.length).padStart(2, '0')}
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button onClick={() => scrollStep(mainRef, -1, 'main')} className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-800/60 border border-transparent dark:border-blue-700/50 transition-all shadow-sm"><Icon name="chevron_left" /></button>
+                                <button onClick={() => scrollStep(mainRef, 1, 'main')} className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-800/60 border border-transparent dark:border-blue-700/50 transition-all shadow-sm"><Icon name="chevron_right" /></button>
+                            </div>
+                        </div>
+                    </div>
+                </AnimatedSection>
+
+                {/* 螢幕 2：副推角色 */}
+                <AnimatedSection mainTitle="詳細屬性" subTitle="副推角色" repeatTitle={true}>
+                    <div className="relative w-full flex flex-col items-center justify-center">
+                        <div ref={subRef} onScroll={(e) => handleScrollEvent(e, 'sub')} className="w-[85vw] md:w-[768px] grid grid-rows-2 grid-flow-col gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory rounded-[1.5rem]">
+                            {SUB_CHARACTERS.map((char, i) => (
+                                <div key={i} className="shrink-0 w-[40vw] sm:w-[160px] md:w-[180px] aspect-[9/16] rounded-[1.5rem] overflow-hidden relative group snap-start shadow-sm border border-gray-200 dark:border-[#333] bg-gray-100 dark:bg-[#0a0a0a]">
+                                    <img src={char.img} alt={char.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end justify-end pb-5 pr-5 md:pb-6 md:pr-6 pointer-events-none">
+                                        <span className="text-lg md:text-xl font-bold text-white drop-shadow-md text-right font-serif">{char.name}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="w-[85vw] md:w-[768px] flex justify-between items-center mt-4">
+                            <div className="bg-blue-50 dark:bg-blue-900/40 border border-blue-100 dark:border-blue-700/50 text-blue-600 dark:text-blue-300 text-[11px] font-mono px-4 py-1.5 rounded-full font-bold shadow-sm flex items-center justify-center tracking-widest">
+                                {String(pageIdxs.sub + 1).padStart(2, '0')} / {String(Math.ceil((SUB_CHARACTERS.length / 2) / (isMd ? 2 : 1))).padStart(2, '0')}
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button onClick={() => scrollStep(subRef, -1, 'sub')} className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-800/60 border border-transparent dark:border-blue-700/50 transition-all shadow-sm"><Icon name="chevron_left" /></button>
+                                <button onClick={() => scrollStep(subRef, 1, 'sub')} className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-800/60 border border-transparent dark:border-blue-700/50 transition-all shadow-sm"><Icon name="chevron_right" /></button>
+                            </div>
+                        </div>
+                    </div>
+                </AnimatedSection>
+
+                {/* 螢幕 3：玩的遊戲 */}
+                <AnimatedSection mainTitle="詳細屬性" subTitle="玩的遊戲" repeatTitle={true}>
+                    <div className="relative w-full flex flex-col items-center justify-center">
+                        <div ref={gamesRef} onScroll={(e) => handleScrollEvent(e, 'games')} className="w-[85vw] md:w-[600px] flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory rounded-[2rem]">
+                            {GAMES.map((game, i) => (
+                                <div key={i} className="shrink-0 w-full aspect-video overflow-hidden relative group snap-start shadow-sm border border-gray-200 dark:border-[#333] bg-gray-900 rounded-[2rem]">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-gray-900 z-0"></div>
+                                    <img src={game.img} alt={game.name} className="w-full h-full object-cover opacity-50 transition-all duration-700 group-hover:scale-105 group-hover:opacity-70 relative z-10" />
+                                    <div className="absolute top-0 left-0 p-6 md:p-8 pointer-events-none z-20">
+                                        <span className="text-xl md:text-2xl font-bold text-white drop-shadow-lg tracking-wide font-serif">{game.name}</span>
+                                    </div>
+                                    <div className="absolute bottom-0 right-0 p-6 md:p-8 flex flex-col items-end pointer-events-none z-20">
+                                        <span className="text-[10px] md:text-xs font-bold text-white/70 uppercase tracking-widest mb-1">Duration</span>
+                                        <span className="text-sm md:text-base font-bold text-white drop-shadow-md font-mono">{game.start} — {game.end}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="w-[85vw] md:w-[600px] flex justify-between items-center mt-4">
+                            <div className="bg-blue-50 dark:bg-blue-900/40 border border-blue-100 dark:border-blue-700/50 text-blue-600 dark:text-blue-300 text-[11px] font-mono px-4 py-1.5 rounded-full font-bold shadow-sm flex items-center justify-center tracking-widest">
+                                {String(pageIdxs.games + 1).padStart(2, '0')} / {String(GAMES.length).padStart(2, '0')}
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button onClick={() => scrollStep(gamesRef, -1, 'games')} className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-800/60 border border-transparent dark:border-blue-700/50 transition-all shadow-sm"><Icon name="chevron_left" /></button>
+                                <button onClick={() => scrollStep(gamesRef, 1, 'games')} className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-800/60 border border-transparent dark:border-blue-700/50 transition-all shadow-sm"><Icon name="chevron_right" /></button>
+                            </div>
+                        </div>
+                    </div>
+                </AnimatedSection>
+
+                {/* 螢幕 4：核心愛好 (興趣圖譜) */}
+                <AnimatedSection mainTitle="詳細屬性" subTitle="興趣圖譜" repeatTitle={true}>
+                    <div className="w-full flex flex-col gap-3 md:gap-4">
+                        {[
+                            { label: '核心愛好', values: ['寫程式', '二次元插畫', '平面設計', '軌道交通', '銀行卡收集'], red: false },
+                            { label: '關注領域', values: ['角色考據 & 劇情分析', '城市軌道交通規劃', '平面設計', '二次元插畫'], red: false },
+                            { label: '雷點', values: ['角色黑', '人身攻擊', '嚴重OOC', '不尊重小眾愛好', 'KY精'], red: true }
+                        ].map((attr, idx) => (
+                            <div key={idx} className="flex flex-wrap items-center gap-2.5 md:gap-3">
+                                <div className={`px-4 py-2 md:px-5 md:py-2.5 rounded-full text-xs md:text-sm font-bold shadow-md shrink-0 ${attr.red ? 'bg-red-600 text-white shadow-red-600/40 border border-red-500' : 'bg-blue-600 text-white shadow-blue-600/20 dark:shadow-blue-600/40'}`}>
+                                    {attr.red && <Icon name="warning" className="inline text-[16px] mr-1.5" />}{attr.label}
+                                </div>
+                                {attr.values.map((val, i) => (
+                                    <div key={i} className={`px-4 py-2 md:px-5 md:py-2.5 rounded-full text-xs md:text-sm font-bold shadow-sm border ${attr.red ? 'bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-300 border-red-200 dark:border-red-700/50 hover:bg-red-100 dark:hover:bg-red-800/60 transition-colors' : 'bg-blue-50 dark:bg-blue-900/40 text-gray-900 dark:text-white border-blue-100 dark:border-blue-700/50 hover:bg-blue-100/80 dark:hover:bg-blue-800/60 transition-colors'}`}>
+                                        {val}
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                </AnimatedSection>
+
+                {/* 螢幕 5：我的專案 */}
+                <AnimatedSection mainTitle="詳細屬性" subTitle="我的專案" repeatTitle={true}>
+                    <div className="relative w-full flex flex-col items-center justify-center">
+                        <div ref={projRef} onScroll={(e) => handleScrollEvent(e, 'proj')} className="w-[85vw] md:w-[600px] flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory rounded-[2rem]">
+                            {PROJECTS.map((proj, i) => (
+                                <div key={i} className="shrink-0 w-full aspect-video overflow-hidden relative group snap-start shadow-md border border-gray-200 dark:border-[#333] bg-gray-900 rounded-[2rem]">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-gray-900 z-0"></div>
+                                    <img src={proj.img} alt={proj.name} className="w-full h-full object-cover opacity-60 transition-all duration-700 group-hover:scale-105" />
+                                    <div className="absolute top-0 left-0 p-6 md:p-8 font-bold text-2xl md:text-3xl text-white drop-shadow-lg">{proj.name}</div>
+                                    <div className="absolute bottom-0 right-0 p-6 md:p-8 flex flex-col items-end font-bold text-white font-mono text-sm md:text-base">{proj.start} — {proj.end}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="w-[85vw] md:w-[600px] flex justify-between items-center mt-4">
+                            <div className="bg-blue-50 dark:bg-blue-900/40 border border-blue-100 dark:border-blue-700/50 text-blue-600 dark:text-blue-300 text-[11px] font-mono px-4 py-1.5 rounded-full font-bold shadow-sm flex items-center justify-center tracking-widest">
+                                {String(pageIdxs.proj + 1).padStart(2, '0')} / {String(PROJECTS.length).padStart(2, '0')}
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button onClick={() => scrollStep(projRef, -1, 'proj')} className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-800/60 border border-transparent dark:border-blue-700/50 transition-all shadow-sm"><Icon name="chevron_left" /></button>
+                                <button onClick={() => scrollStep(projRef, 1, 'proj')} className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-800/60 border border-transparent dark:border-blue-700/50 transition-all shadow-sm"><Icon name="chevron_right" /></button>
+                            </div>
+                        </div>
+                    </div>
+                </AnimatedSection>
+            </section>
+        );
+    };
+
+    const Network = () => {
+        const handleCopy = (text) => {
+            const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+            alert(`已複製: ${text}`);
+        };
+        return (
+            <section id="network" className="w-full relative scroll-mt-0">
+                <AnimatedSection mainTitle="聯絡方式" subTitle="全息通訊陣列">
+                    <div className="w-full flex flex-wrap justify-center gap-5 md:gap-8">
+                        {SOCIAL_LINKS.map((link, i) => (
+                            <a key={i} href={link.copy ? undefined : link.url} target={link.copy ? undefined : "_blank"} onClick={(e) => { if(link.copy) { e.preventDefault(); handleCopy(link.id); } }} className="flex items-center p-3 bg-white dark:bg-[#111111] border-[2px] border-gray-100 dark:border-[#333333] rounded-full hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-[0_15px_30px_-5px_rgba(59,130,246,0.2)] dark:hover:shadow-[0_10px_25px_-5px_rgba(0,0,0,0.5)] transition-all duration-300 cursor-pointer group w-full sm:w-[calc(50%-1.5rem)] max-w-[500px]">
+                                <div className={`w-16 h-16 md:w-[76px] md:h-[76px] rounded-full flex items-center justify-center shrink-0 ${link.bg} ${link.color} shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                                    <div className="w-8 h-8 md:w-9 md:h-9"><link.svgIcon /></div>
+                                </div>
+                                <div className="flex-1 ml-4 mr-4 md:ml-6 md:mr-6 min-w-0 flex flex-col justify-center text-left">
+                                    <div className={`text-sm md:text-base font-bold tracking-wide mb-0.5 ${link.color}`}>{link.name}</div>
+                                    <div className="text-2xl md:text-[1.75rem] font-bold text-gray-900 dark:text-white truncate leading-tight">{link.id}</div>
+                                </div>
+                                <div className="w-16 h-16 md:w-[76px] md:h-[76px] rounded-full bg-gray-50 dark:bg-[#222222] flex items-center justify-center group-hover:bg-blue-500 dark:group-hover:bg-blue-600 transition-colors duration-300 shrink-0 border border-gray-100 dark:border-[#444] shadow-sm group-hover:border-blue-500 dark:group-hover:border-blue-600">
+                                    {link.copy ? <Icon name="content_copy" className="text-[24px] md:text-[32px] text-gray-400 dark:text-white group-hover:text-white transition-colors duration-300" /> : <Icon name="arrow_forward" className="text-[24px] md:text-[32px] text-gray-400 dark:text-white group-hover:text-white transition-colors duration-300" />}
+                                </div>
+                            </a>
+                        ))}
+                        
+                        <div className="w-full mt-4 p-8 md:p-12 bg-white dark:bg-[#111111] border-[2px] border-gray-100 dark:border-[#333333] rounded-[2.5rem] md:rounded-[3rem] hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-[0_15px_30px_-5px_rgba(59,130,246,0.2)] dark:hover:shadow-[0_10px_25px_-5px_rgba(0,0,0,0.5)] transition-all duration-300">
+                            <h3 className="text-sm md:text-base font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-6 md:mb-8 flex items-center gap-3">
+                                <Icon name="mail" className="text-[20px] md:text-[24px]" /> 信箱通訊矩陣
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-gray-600 dark:text-white">
+                                {EMAILS.map((email, idx) => (
+                                    <a key={idx} href={`mailto:${email}`} className="text-lg md:text-xl font-bold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-3 group">
+                                        <div className="w-2 h-2 rounded-full bg-blue-400 dark:bg-blue-500 group-hover:bg-blue-600 dark:group-hover:bg-blue-400 transition-colors"></div>{email}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </AnimatedSection>
+            </section>
+        );
+    };
+
+    const HistoryItem = ({ item, isLast }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        return (
+            <div className="relative flex items-start w-full group">
+                {/* 左側時間軸：垂直絕對對齊，完美穿過中心不拉伸變形 */}
+                <div className="absolute left-3 md:left-6 top-0 bottom-0 w-[3px] flex justify-center z-0">
+                    <div className={`w-full h-full bg-gradient-to-b from-blue-500 ${isLast ? 'to-transparent' : 'via-blue-500/80 to-blue-500'}`} style={isLast ? {} : { height: 'calc(100% + 24px)' }}></div>
+                    <div className="absolute top-[28px] md:top-[30px] w-2.5 h-2.5 -translate-y-1/2 rounded-full bg-blue-600 ring-[4px] ring-[#f9fafb] dark:ring-[#000000] z-10 transition-transform duration-300 group-hover:scale-125"></div>
+                </div>
+                
+                {/* 右側手風琴折疊卡片 */}
+                <div className="ml-10 md:ml-16 flex-1 flex flex-col z-10 pb-6 min-w-0">
+                    <button onClick={() => setIsOpen(!isOpen)} className="bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800/50 p-4 md:py-4 md:px-6 rounded-full flex items-center justify-between transition-all group-hover:-translate-y-0.5 outline-none shadow-sm h-[56px] md:h-[60px] w-full">
+                        <div className="text-blue-900 dark:text-blue-300 font-mono text-sm md:text-base font-bold shrink-0">{item.date}</div>
+                        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                            <div className={`px-3 py-1 md:px-4 md:py-1.5 text-[10px] md:text-xs font-bold rounded-full shadow-md transition-colors shrink-0 whitespace-nowrap ${item.type === 'attr' ? 'bg-blue-600 text-white shadow-blue-600/30 dark:shadow-blue-900/50' : 'bg-black text-white dark:bg-white dark:text-black shadow-black/20 dark:shadow-white/20'}`}>
+                                {item.title}
+                            </div>
+                            <span className={`text-blue-600 dark:text-blue-400 transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-180' : ''}`}>
+                                <Icon name="keyboard_arrow_down" />
+                            </span>
+                        </div>
+                    </button>
+                    {/* 折疊內容區域 */}
+                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-60 opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'}`}>
+                        <div className="bg-white dark:bg-[#111111] border border-blue-100 dark:border-[#2a2a2a] p-5 md:px-8 rounded-[2rem] shadow-sm">
+                            <p className="text-sm md:text-base text-gray-700 dark:text-white leading-relaxed font-medium whitespace-pre-line">{item.details}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const History = () => {
+        const UPDATES = [
+            { date: '2026年05月01日', type: 'page', title: '頁面更新', details: '添加深色模式，排版優化。' },
+            { date: '2026年04月26日', type: 'page', title: '頁面更新', details: '空間站2.0Alpha上線。' }
+        ];
+
+        return (
+            <section id="history" className="w-full relative scroll-mt-0">
+                <AnimatedSection mainTitle="更新歷史" subTitle="空間站日誌">
+                    <div className="flex flex-col w-full relative">
+                        {UPDATES.map((item, i) => (
+                            <HistoryItem key={i} item={item} isLast={i === UPDATES.length - 1} />
+                        ))}
+                    </div>
+                </AnimatedSection>
+            </section>
+        );
+    };
+
+    const ChatBot = () => {
+        const [isOpen, setIsOpen] = useState(false);
+        const [messages, setMessages] = useState([{ role: 'ai', text: '你好！我是 ClaySeek。很高興能在此為你提供有關星壤的資訊。' }]);
+        const [input, setInput] = useState('');
+        const [isLoading, setIsLoading] = useState(false);
+        const [selectedModel, setSelectedModel] = useState('Gemini');
+        const chatContainerRef = useRef(null);
+
+        useEffect(() => { 
+            if (chatContainerRef.current) chatContainerRef.current.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' }); 
+        }, [messages, isLoading]);
+
+        const handleSend = async () => {
+            if (!input.trim() || isLoading) return;
+            const userText = input.trim(); 
+            setInput('');
+            setMessages(prev => [...prev, { role: 'user', text: userText }]);
+            setIsLoading(true);
+
+            const apiKey = "";
+            const systemPrompt = "你是Clay的AI助手，使用簡短繁體中文回覆。Clay愛好程式設計、星鐵、軌道交通。";
+            
+            const callAPI = async (retryCount = 0) => {
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: userText }] }], systemInstruction: { parts: [{ text: systemPrompt }] } })
+                    });
+                    if (!res.ok) throw new Error('API');
+                    const data = await res.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text;
+                } catch (error) {
+                    if (retryCount < 5) { 
+                        await new Promise(r => setTimeout(r, Math.pow(2, retryCount) * 1000)); 
+                        return callAPI(retryCount + 1); 
+                    }
+                    throw error;
+                }
+            };
+            
+            try {
+                const response = await callAPI();
+                setMessages(prev => [...prev, { role: 'ai', text: (selectedModel === '豆包' ? `[豆包] ` : ``) + (response || "訊號微弱...") }]);
+            } catch (e) {
+                setMessages(prev => [...prev, { role: 'ai', text: "暫時無法連接到星際伺服器，請檢查網路。" }]);
+            } finally { setIsLoading(false); }
+        };
+
+        return (
+            <>
+                {/* 懸浮切換按鈕 (深色模式白底黑圖) */}
+                <button onClick={() => setIsOpen(!isOpen)} className="fixed bottom-10 right-10 w-14 h-14 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-[100] group border border-transparent dark:border-gray-200">
+                    <div className={`transition-all duration-300 transform ${isOpen ? 'rotate-90 scale-110' : 'rotate-0'}`}>
+                        {isOpen ? <Icon name="close" className="text-[28px]" /> : <div className="w-7 h-7 group-hover:animate-pulse"><SVGIcons.StarSparkle /></div>}
+                    </div>
+                </button>
+                
+                {/* 液態玻璃對話方塊 */}
+                <div className={`fixed bottom-28 right-6 md:right-10 w-[calc(100vw-3rem)] sm:w-[380px] h-[550px] liquid-glass rounded-[2.5rem] shadow-2xl z-[90] flex flex-col overflow-hidden transition-all duration-500 origin-bottom-right transform ${isOpen ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-12 scale-90 opacity-0 pointer-events-none'}`}>
+                    <div className="p-6 pb-4 flex items-center justify-between border-b border-white/10 dark:border-[#333]">
+                        <div className="flex items-center gap-3">
+                            <img src="https://images.castorice.co/clay.castorice.co/images/Head.jpg" className="w-8 h-8 rounded-full border border-white/40 shadow-sm object-cover" />
+                            <div className="text-black dark:text-white text-base flex items-center font-sans">
+                                <span className="font-normal">Clay</span><span className="font-semibold">Seek</span>
+                            </div>
+                            <div className="bg-blue-600 px-2.5 h-5 rounded-full shadow-sm flex items-center justify-center min-w-[32px]">
+                                <span className="text-[9px] font-bold text-white uppercase leading-none text-center block w-full">AI</span>
+                            </div>
+                        </div>
+                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                    </div>
+                    
+                    <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-5 space-y-4">
+                        {messages.map((m, i) => (
+                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[85%] px-4 py-2.5 rounded-[1.5rem] text-sm leading-relaxed shadow-sm ${m.role === 'user' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white/50 dark:bg-[#1a1a1a]/90 text-gray-900 dark:text-white backdrop-blur-sm rounded-bl-sm border border-white/30 dark:border-[#333]'}`}>{m.text}</div>
+                            </div>
+                        ))}
+                        {isLoading && <div className="flex justify-start"><div className="bg-white/30 dark:bg-[#1a1a1a]/90 px-4 py-2 rounded-full flex gap-2 border border-white/10 dark:border-[#333]"><div className="w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce"></div><div className="w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]"></div><div className="w-1.5 h-1.5 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]"></div></div></div>}
+                    </div>
+                    
+                    <div className="p-5 pt-2 space-y-3">
+                        <div className="flex flex-col gap-2">
+                            <div className="inline-flex self-start bg-white/30 dark:bg-[#111111]/80 backdrop-blur-md p-1 rounded-full border border-white/30 dark:border-[#333]/50 shadow-sm">
+                                {['Gemini', '豆包'].map(m => (
+                                    <button key={m} onClick={() => setSelectedModel(m)} className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all duration-300 ${selectedModel === m ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 dark:text-white hover:text-black dark:hover:text-gray-200'}`}>{m}</button>
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-1 bg-white/40 dark:bg-[#0a0a0a]/80 backdrop-blur-md p-1.5 rounded-full border border-white/30 dark:border-[#333]/50 shadow-inner group">
+                                <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} placeholder={`使用 ${selectedModel} 提問...`} className="flex-1 bg-transparent border-none px-4 text-sm outline-none text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-500" />
+                                <button onClick={handleSend} disabled={isLoading || !input.trim()} className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm ${isLoading || !input.trim() ? 'bg-blue-100/50 dark:bg-[#1a1a1a] text-blue-400 dark:text-gray-500 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-800'}`}>
+                                    <Icon name="send" className="text-[18px]" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    };
+
+    const Footer = () => (
+        <footer className="snap-section flex flex-col items-center justify-center space-y-8 w-full py-16 bg-blue-50/50 dark:bg-blue-900/20 border-t border-blue-100/50 dark:border-blue-900/50">
+            <div className="flex flex-col items-center text-center">
+                <h2 className="text-4xl md:text-6xl tracking-tight flex items-center cursor-default mb-4" style={{ fontFamily: '"Google Sans Flex", "Google Sans", sans-serif' }}>
+                    <span className="font-normal text-gray-800 dark:text-white">Clay</span><span className="font-semibold ml-2 text-blue-600 dark:text-blue-500">SpaceStation</span>
+                </h2>
+                
+                <div className="flex gap-4 justify-center mb-6">
+                    <a href="https://www.claylark.com" target="_blank" className="px-8 py-3 bg-blue-600 text-white text-sm font-bold rounded-full shadow-lg shadow-blue-200 dark:shadow-blue-900/40 active:scale-95 transition-all flex items-center justify-center">造訪主站</a>
+                    <a href="https://github.com/Claylark" target="_blank" className="w-11 h-11 bg-black dark:bg-[#222] text-white dark:text-white rounded-full flex items-center justify-center shadow-lg dark:shadow-[0_4px_15px_rgba(0,0,0,0.5)] active:scale-95 transition-all p-2.5 hover:bg-gray-800 dark:hover:bg-[#333] border dark:border-[#444]"><SVGIcons.GitHub /></a>
+                </div>
+
+                <p className="text-lg md:text-xl text-gray-500 font-bold tracking-[0.4em] pt-2">願此行，終抵群星</p>
+            </div>
+            
+            <div className="flex flex-col items-center space-y-3 text-xs text-gray-400 font-light text-center px-6 pt-2">
+                <div className="text-gray-400 dark:text-gray-500 font-mono tracking-widest text-[10px] mb-2 font-bold">Version 2.0 Alpha Build 2</div>
+                <p>版權所有 © {new Date().getFullYear()} Claylark 保留所有權利</p>
+                <div className="flex flex-col space-y-1.5">
+                    <span>基於 <a href="https://github.com/Claylark/clay-spacestation/blob/main/License.md" target="_blank" className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer">Claylark 開源軟體使用授權條款 (COSL) v1.0</a></span>
+                    <span className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-default">ICP 備案號：不存在</span>
+                    <span className="hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-default">公安網備：不存在</span>
+                </div>
+            </div>
+        </footer>
+    );
+
+    const App = () => (<div className="relative font-sans antialiased selection:bg-blue-100 selection:text-blue-900 dark:selection:bg-blue-900/50 dark:selection:text-blue-100 min-h-screen bg-transparent transition-colors duration-300"><Header /><Hero /><Profile /><Attributes /><Network /><History /><Footer /><ChatBot /></div>);
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
